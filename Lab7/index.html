@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Lab 7 — Teksturowanie piramidy</title>
+    <link rel="stylesheet" href="demo.css">
+    <style>
+        #content { max-width: 720px; padding: 16px 24px; }
+        a { color: #1a4d8c; }
+        code { background: #eee; padding: 1px 5px; }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h3>Lab 7 — Teksturowanie piramidy</h3>
+        <p>Dwa sposoby ładowania tekstur:</p>
+        <ul>
+            <li><a href="texture-from-color-buffer.html">Tekstura z buforu kolorów</a>
+                — scena 2D jest rysowana do panelu (canvas), kopiowana funkcją <code>glCopyTexImage2D</code> i nakładana na piramidę.</li>
+            <li><a href="texture-transform.html">Tekstura z pliku</a>
+                — trzy przykładowe pliki: cegła, marmur, Ziemia nocą.</li>
+        </ul>
+        <p>Obie strony otwieraj przez lokalny serwer HTTP (adres <code>http://localhost:...</code>), nie przez dwuklik na plik HTML.</p>
+    </div>
+</body>
+</html>
