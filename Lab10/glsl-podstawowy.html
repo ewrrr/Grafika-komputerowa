@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>GLSL — fala sinus</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #000; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ─────────────────────────────────────────────────────────────────
+// VERTEX SHADER
+// Uruchamia się raz na każdy wierzchołek (rogów płaszczyzny: 4).
+// Jego zadanie: przekazać UV do fragmenta i policzyć pozycję na ekranie.
+// ─────────────────────────────────────────────────────────────────
+const vertexShader = /* glsl */`
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────
+// FRAGMENT SHADER
+// Uruchamia się raz na każdy piksel ekranu (np. 2 miliony razy).
+// Jego zadanie: zwrócić kolor tego piksela.
+// ─────────────────────────────────────────────────────────────────
+const fragmentShader = /* glsl */`
+  precision highp float;
+
+  varying vec2 vUv;        // pozycja piksela w przedziale [0..1]
+  uniform float u_time;    // czas w sekundach od startu
+
+  void main() {
+    // vUv jest już zmapowane na obszar sceny shadera: x ∈ [0..1], y ∈ [0..1]
+    vec2 uv = vUv;
+
+    // Wartość fali w [-1..1]. Odejmowanie u_time przesuwa fazę w prawo.
+    float wave = sin(uv.x * 6.28318530718 - u_time);
+
+    // Sinus zwraca [-1..1], więc Y fali mapujemy na współrzędne sceny [0..1]
+    float waveY = 0.5 + 0.5 * wave;
+
+    // Rysujemy samą falę (cienki pasek wokół y = waveY)
+    float thickness = 0.02;
+    float line = 1.0 - smoothstep(thickness, thickness + 0.01, abs(uv.y - waveY));
+
+    // Kolor zależy od wysokości fali: -1 → żółty, +1 → czerwony
+    vec3 yellow = vec3(1.0, 1.0, 0.0);
+    vec3 red = vec3(1.0, 0.0, 0.0);
+    float t = (wave + 1.0) * 0.5;
+    vec3 waveColor = mix(yellow, red, t);
+
+    vec3 background = vec3(0.08, 0.08, 0.12);
+    vec3 color = mix(background, waveColor, line);
+
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────
+// Three.js setup
+// ─────────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+camera.position.z = 1;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// uniformy — zmienne wstrzykiwane z JS do shadera
+const uniforms = {
+  u_time: { value: 0.0 }
+};
+
+const mesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms })
+);
+scene.add(mesh);
+
+// dopasowanie do okna (żeby okrąg był okrągły, nie eliptyczny)
+function resize() {
+  const aspect = window.innerWidth / window.innerHeight;
+  camera.left = -aspect; camera.right = aspect;
+  camera.updateProjectionMatrix();
+  mesh.scale.x = aspect;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// pętla renderująca — odpalana 60 razy na sekundę
+const clock = new THREE.Clock();
+
+function tick() {
+  uniforms.u_time.value = clock.getElapsedTime();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+
+</body>
+</html>
