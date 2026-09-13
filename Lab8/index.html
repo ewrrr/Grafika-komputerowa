@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wieża Hanoi — Three.js</title>
+  <style>
+    html, body {
+      margin: 0;
+      overflow: hidden;
+      background: #efe8dc;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: #3a2f24;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #hud {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .panel {
+      pointer-events: auto;
+      background: rgba(255, 250, 242, 0.88);
+      border: 1px solid rgba(90, 64, 40, 0.18);
+      box-shadow: 0 8px 24px rgba(70, 48, 24, 0.12);
+      border-radius: 14px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 650;
+    }
+
+    .subtitle,
+    #status {
+      margin: 0;
+      font-size: 14px;
+      color: #6a5644;
+    }
+
+    #status {
+      margin-top: 8px;
+      font-weight: 600;
+      color: #3f3328;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button,
+    select {
+      appearance: none;
+      border: 1px solid rgba(90, 64, 40, 0.25);
+      background: #fffaf3;
+      color: #3a2f24;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover,
+    select:hover {
+      background: #f4ebdd;
+    }
+
+    button.primary {
+      background: #8b5a2b;
+      border-color: #8b5a2b;
+      color: #fffaf3;
+    }
+
+    button.primary:hover {
+      background: #734821;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    input[type="range"] {
+      width: 110px;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="panel">
+      <h1>Wieża Hanoi</h1>
+      <p class="subtitle">Prawidłowe rozwiązanie: palik 0 → palik 2</p>
+      <p id="status">Przygotowanie sceny…</p>
+    </div>
+    <div class="panel controls">
+      <button id="toggle" class="primary">Pauza</button>
+      <button id="reset">Reset</button>
+      <label>
+        Krążki
+        <select id="disks">
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </label>
+      <label>
+        Tempo
+        <input id="speed" type="range" min="0.4" max="2.4" step="0.1" value="1">
+      </label>
+    </div>
+  </div>
+  <canvas id="glcanvas"></canvas>
+  <script src="build/three.min.js"></script>
+  <script src="hanoi.js"></script>
+</body>
+</html>
