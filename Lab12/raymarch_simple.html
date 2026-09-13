@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>SDF — koło i prostokąt</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: system-ui, sans-serif; }
+  canvas { display: block; }
+  #ui {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+  }
+  #ui button {
+    padding: 10px 16px;
+    border: 1px solid #4a6aa0;
+    border-radius: 6px;
+    background: #1a2438;
+    color: #dce8ff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #ui button:hover { background: #243352; }
+  #ui button.active {
+    background: #3d6ec9;
+    border-color: #7aa2ff;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+<div id="ui">
+  <button type="button" data-op="0" class="active">Suma</button>
+  <button type="button" data-op="1">Przecięcie</button>
+  <button type="button" data-op="2">Różnica</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const vertexShader = `
+void main() {
+  gl_Position = vec4(position, 1.0);
+}
+`;
+
+const fragmentShader = `
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform int u_op;
+
+// Koło: odległość od środka minus promień.
+float sdCircle(vec2 p, float r) {
+  return length(p) - r;
+}
+
+// Prostokąt wyśrodkowany: b to półosie (szerokość/2, wysokość/2).
+float sdBox(vec2 p, vec2 b) {
+  vec2 d = abs(p) - b;
+  return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+
+vec2 rotate(vec2 p, float a) {
+  float c = cos(a);
+  float s = sin(a);
+  return vec2(c * p.x + s * p.y, -s * p.x + c * p.y);
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+
+  // Koło: trajektoria Lissajous.
+  vec2 circleCenter = vec2(0.42 * sin(u_time), 0.28 * sin(u_time * 2.0));
+  float circle = sdCircle(uv - circleCenter, 0.22);
+
+  // Prostokąt: obrót + zmiana proporcji.
+  vec2 boxSize = vec2(
+    0.28 + 0.10 * sin(u_time * 1.4),
+    0.16 + 0.08 * cos(u_time * 0.9)
+  );
+  float box = sdBox(rotate(uv, u_time * 0.7), boxSize);
+
+  float d;
+  if (u_op == 1) {
+    d = max(circle, box);       // przecięcie
+  } else if (u_op == 2) {
+    d = max(circle, -box);      // różnica (koło minus prostokąt)
+  } else {
+    d = min(circle, box);       // suma
+  }
+
+  vec3 bg    = vec3(0.06, 0.07, 0.12);
+  vec3 fill  = vec3(0.25, 0.72, 0.95);
+  float aa   = fwidth(d);
+  float mask = 1.0 - smoothstep(-aa, aa, d);
+  vec3 col   = mix(bg, fill, mask);
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const geometry = new THREE.PlaneGeometry(2, 2);
+const material = new THREE.ShaderMaterial({
+  vertexShader,
+  fragmentShader,
+  uniforms: {
+    u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    u_time: { value: 0.0 },
+    u_op: { value: 0 }
+  }
+});
+
+scene.add(new THREE.Mesh(geometry, material));
+
+const buttons = document.querySelectorAll('#ui button');
+buttons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    material.uniforms.u_op.value = parseInt(btn.dataset.op, 10);
+    buttons.forEach((b) => b.classList.toggle('active', b === btn));
+  });
+});
+
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+});
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  material.uniforms.u_time.value = clock.getElapsedTime();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
